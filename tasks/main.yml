@@ -1,0 +1,6 @@
+---
+#
+# Ansible tasks for the nomad role
+#
+
+- include: nomad.yml

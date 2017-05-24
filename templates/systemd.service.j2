@@ -1,0 +1,29 @@
+#
+# Systemd configuration for nomad
+# {{ ansible_managed }}
+#
+# Note: Reloading the nomad process with systemd or similar will
+# not pull a fresh token from /var/run. Nomad must be restarted.
+#
+
+[Unit]
+Description=Nomad
+Documentation=https://nomadproject.io/docs/
+# @TODO Verify that restarting a local consul agent does not trigger a restart of this service...
+# Requires=consul.service
+# After=network-online.target consul.service
+After=network-online.target
+
+[Service]
+User={{ nomad_runtime_user }}
+Group={{ nomad_runtime_group }}
+ExecStart={{ nomad_home }}/bin/nomad agent -config {{ nomad_config_dir }}
+{% if nomad_server and nomad_vault_enabled %}
+ExecStartPre=/usr/bin/bash  -c "/usr/bin/systemctl set-environment VAULT_TOKEN=$(cat /var/run/vault/instance_token)"
+ExecStartPost=/usr/bin/bash -c "/usr/bin/systemctl unset-environment VAULT_TOKEN"
+{% endif %}
+ExecReload=/bin/kill -HUP $MAINPID
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

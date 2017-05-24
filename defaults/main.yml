@@ -1,0 +1,86 @@
+#
+# Default Role Variables for nomad
+#
+# @see http://docs.ansible.com/playbooks_roles.html#roles
+#
+
+nomad_version: 0.5.6
+nomad_archive: "nomad_{{ nomad_version }}_linux_amd64.zip"
+nomad_download: "https://releases.hashicorp.com/nomad/{{ nomad_version }}/{{ nomad_archive }}"
+nomad_checksum: sha256:3f5210f0bcddf04e2cc04b14a866df1614b71028863fe17bcdc8585488f8cb0c
+nomad_download_folder: /tmp
+
+nomad_home: /opt/nomad
+nomad_config_dir: /etc/nomad
+nomad_config_file: /etc/nomad/nomad.hcl
+nomad_log_file: /var/log/nomad
+nomad_data_dir: "{{ nomad_home }}/data"
+
+# There is a general recommendation to run nomad as root, so we
+# use a runtime user/group specification to make that easier.
+# The runtime user/group is not managed by this role and should
+# already exist on the host machine.
+nomad_user: nomad
+nomad_group: nomad
+nomad_runtime_user: root
+nomad_runtime_group: root
+
+nomad_region: "global"
+nomad_datacenter: "dc1"
+nomad_node_name: ''
+nomad_log_level: "INFO"
+nomad_enable_debug: false
+
+nomad_ports_http: 4646
+nomad_ports_rpc: 4647
+nomad_ports_serf: 4648
+
+nomad_bind_address:      "127.0.0.1"
+nomad_advertise_address: "127.0.0.1"
+
+nomad_addresses_http: "{{ nomad_bind_address }}"
+nomad_addresses_rpc:  "{{ nomad_bind_address }}"
+nomad_addresses_serf: "{{ nomad_bind_address }}"
+
+nomad_advertise_http: "{{ nomad_advertise_address }}"
+nomad_advertise_rpc:  "{{ nomad_advertise_address }}"
+nomad_advertise_serf: "{{ nomad_advertise_address }}"
+
+nomad_leave_on_interrupt: false
+nomad_leave_on_terminate: false
+nomad_enable_syslog: true
+nomad_syslog_facility: "LOCAL0"
+nomad_disable_update_check: true
+nomad_disable_anonymous_signature: true
+
+nomad_telemetry_enabled: true
+nomad_telemetry_disable_hostname: true
+nomad_telemetry_statsite_address: ''
+nomad_telemetry_statsd_address: ''
+
+nomad_consul_enabled: true
+
+nomad_server: false
+nomad_server_bootstrap_expect: 3
+nomad_server_data_dir: "{{ nomad_data_dir }}/server"
+nomad_server_protocol_version: ''
+nomad_server_num_schedulers: "{{ ansible_processor_cores }}"
+nomad_server_enabled_schedulers: []
+nomad_server_node_gc_threshold: ''
+nomad_server_rejoin_after_leave: ''
+nomad_server_retry_join: []
+nomad_server_retry_interval: 30s
+nomad_server_retry_max: 0
+nomad_server_start_join: []
+
+nomad_client: true
+nomad_client_state_dir: "{{ nomad_data_dir }}/client"
+nomad_client_alloc_dir: "{{ nomad_data_dir }}/alloc"
+nomad_client_servers: []
+nomad_client_node_id: ''
+nomad_client_node_class: ''
+nomad_client_meta: {}
+nomad_client_options: {}
+
+nomad_vault_enabled: false
+nomad_vault_address: https://active.vault.service.consul:8200

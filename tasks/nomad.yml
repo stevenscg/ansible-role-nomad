@@ -1,0 +1,112 @@
+---
+#
+# Ansible tasks for the nomad role
+#
+
+- name: Ensure dependencies are installed
+  yum:
+    name: "{{ item }}"
+    state: installed
+  with_items:
+    - unzip
+    - jq
+
+- name: Ensure python-based dependencies are installed
+  pip:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - pyhcl
+    - python-consul
+
+- name: Download nomad
+  get_url:
+    url: "{{ nomad_download }}"
+    dest: "{{ nomad_download_folder }}"
+    checksum: "{{ nomad_checksum }}"
+  register: nomad_was_downloaded
+
+- name: Create nomad group
+  group:
+    name: "{{ nomad_group }}"
+    state: present
+    system: yes
+
+# see: https://docs.docker.com/engine/installation/linux/centos/#/create-a-docker-group
+- name: Create docker group
+  group:
+    name: docker
+    state: present
+    system: yes
+
+- name: Create nomad user
+  user:
+    name: "{{ nomad_user }}"
+    group: "{{ nomad_group }}"
+    groups: docker
+    system: yes
+
+- name: Create nomad directory
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_group }}"
+  with_items:
+    - "{{ nomad_home }}"
+    - "{{ nomad_home }}/bin"
+    - "{{ nomad_config_dir }}"
+    - "{{ nomad_data_dir }}"
+
+- name: Copy and unpack
+  unarchive:
+    src: "{{ nomad_download_folder }}/{{ nomad_archive }}"
+    dest: "{{ nomad_home }}/bin"
+    copy: no
+  when: nomad_was_downloaded|changed
+  notify:
+    - Restart nomad
+
+- name: Set ownership
+  file:
+    state: directory
+    path: "{{ nomad_home }}"
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_group }}"
+    recurse: yes
+  when: nomad_was_downloaded|changed
+
+- name: Set nomad environment variables
+  template:
+    src: nomad.env.j2
+    dest: /etc/profile.d/nomad.sh
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install nomad configuration file
+  template:
+    src: nomad.hcl.j2
+    dest: "{{ nomad_config_file }}"
+    owner: "{{ nomad_user }}"
+    group: "{{ nomad_group }}"
+    mode: 0600
+  notify:
+    - Restart nomad
+
+- name: Create the nomad systemd service
+  template:
+    src: systemd.service.j2
+    dest: /etc/systemd/system/nomad.service
+    owner: root
+    group: root
+    mode: 0644
+  register: nomad_systemd_service
+
+- name: Ensure nomad is started and enabled at boot
+  systemd:
+    name: nomad
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  when: nomad_systemd_service|changed

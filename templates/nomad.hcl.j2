@@ -1,0 +1,231 @@
+#
+# Hashicorp Nomad configuration
+# {{ ansible_managed }}
+#
+
+region = "{{ nomad_region }}"
+datacenter = "{{ nomad_datacenter }}"
+{% if nomad_node_name %}
+name = "{{ nomad_node_name }}"
+{% endif %}
+data_dir = "{{ nomad_data_dir }}"
+bind_addr = "{{ nomad_bind_address }}"
+log_level = "{{ nomad_log_level }}"
+{% if nomad_enable_debug %}
+enable_debug = {{ nomad_enable_debug | default(false) | to_json }}
+{% endif %}
+
+{% if nomad_leave_on_interrupt is defined %}
+leave_on_interrupt = {{ nomad_leave_on_interrupt | to_json }}
+{% endif %}
+{% if nomad_leave_on_terminate is defined %}
+leave_on_terminate = {{ nomad_leave_on_terminate | to_json }}
+{% endif %}
+{% if nomad_enable_syslog is defined %}
+enable_syslog = {{ nomad_enable_syslog | to_json }}
+{% endif %}
+{% if nomad_syslog_facility and nomad_enable_syslog %}
+syslog_facility = "{{ nomad_syslog_facility }}"
+{% endif %}
+{% if nomad_disable_update_check is defined %}
+disable_update_check = {{ nomad_disable_update_check | to_json }}
+{% endif %}
+{% if nomad_disable_anonymous_signature is defined %}
+disable_anonymous_signature = {{ nomad_disable_anonymous_signature | to_json }}
+{% endif %}
+
+ports {
+  http = {{ nomad_ports_http }}
+{% if nomad_ports_rpc %}
+  rpc = {{ nomad_ports_rpc }}
+{% endif %}
+{% if nomad_ports_serf %}
+  serf = {{ nomad_ports_serf }}
+{% endif %}
+}
+
+addresses {
+  http = "{{ nomad_addresses_http }}"
+{% if nomad_addresses_rpc %}
+  rpc = "{{ nomad_addresses_rpc }}"
+{% endif %}
+{% if nomad_addresses_serf %}
+  serf = "{{ nomad_addresses_serf }}"
+{% endif %}
+}
+
+advertise {
+{% if nomad_advertise_http and nomad_ports_http %}
+  http = "{{ nomad_advertise_http }}:{{ nomad_ports_http }}"
+{% endif %}
+{% if nomad_advertise_rpc and nomad_ports_rpc %}
+  rpc = "{{ nomad_advertise_rpc }}:{{ nomad_ports_rpc }}"
+{% endif %}
+{% if nomad_advertise_serf and nomad_ports_serf %}
+  serf = "{{ nomad_advertise_serf }}:{{ nomad_ports_serf }}"
+{% endif %}
+}
+
+{% if nomad_telemetry_enabled %}
+telemetry {
+{% if nomad_telemetry_statsite_address %}
+  statsite_address = "{{ nomad_telemetry_statsite_address }}"
+{% endif %}
+{% if nomad_telemetry_statsd_address %}
+  statsd_address = "{{ nomad_telemetry_statsd_address }}"
+{% endif %}
+{% if nomad_telemetry_disable_hostname %}
+  disable_hostname = {{ nomad_telemetry_disable_hostname | to_json }}
+{% endif %}
+}
+{% endif %}
+
+{% if nomad_consul_enabled %}
+consul {
+  address = "{{ nomad_consul_address | default("127.0.0.1:8500") }}"
+{% if nomad_consul_auto_advertise is defined %}
+  auto_advertise = {{ nomad_consul_auto_advertise | to_json }}
+{% endif %}
+{% if nomad_server_service_name is defined %}
+  server_service_name = "{{ nomad_server_service_name }}"
+{% endif %}
+{% if nomad_server_auto_join is defined %}
+  server_auto_join = {{ nomad_server_auto_join | to_json }}
+{% endif %}
+{% if nomad_client_service_name is defined %}
+  client_service_name = "{{ nomad_client_service_name }}"
+{% endif %}
+{% if nomad_client_auto_join is defined %}
+  client_auto_join = {{ nomad_client_auto_join | to_json }}
+{% endif %}
+}
+{% endif %}
+
+{% if nomad_vault_enabled %}
+vault {
+  enabled = true
+{% if nomad_vault_address is defined %}
+  address = "{{ nomad_vault_address }}"
+{% endif %}
+{% if nomad_vault_ca_path is defined %}
+  ca_path = "{{ nomad_vault_ca_path }}"
+{% endif %}
+{% if nomad_vault_cert_file is defined %}
+  cert_file = "{{ nomad_vault_cert_file }}"
+{% endif %}
+{% if nomad_vault_key_file is defined %}
+  key_file = "{{ nomad_vault_key_file }}"
+{% endif %}
+{% if nomad_server and nomad_vault_token is defined %}
+  vault_token = "{{ nomad_vault_token }}"
+{% endif %}
+{% if nomad_server and nomad_vault_create_from_role is defined %}
+  create_from_role = "{{ nomad_vault_create_from_role }}"
+{% endif %}
+}
+{% endif %}
+
+client {
+  enabled = {{ nomad_client | default(false) | to_json }}
+{% if nomad_client_state_dir and nomad_client %}
+  state_dir = "{{ nomad_client_state_dir }}"
+{% endif %}
+{% if nomad_client_alloc_dir and nomad_client %}
+  alloc_dir = "{{ nomad_client_alloc_dir }}"
+{% endif %}
+{% if nomad_client_node_id and nomad_client %}
+  node_id = "{{ nomad_client_node_id }}"
+{% endif %}
+{% if nomad_client_node_class and nomad_client %}
+  node_class = "{{ nomad_client_node_class }}"
+{% endif %}
+{% if nomad_client_servers and nomad_client %}
+  servers = [
+{% for server in nomad_client_servers %}
+{% if not loop.last %}
+    "{{ server }}",
+{% else %}
+    "{{ server }}"
+{% endif %}
+{% endfor %}
+  ]
+{% endif %}
+{% if nomad_client_meta and nomad_client %}
+  meta {
+{% for meta in nomad_client_meta %}
+    {{ meta }} = "{{ nomad_client_meta[meta] }}"
+{% endfor %}
+  }
+{% endif %}
+{% if nomad_client_options and nomad_client %}
+  options {
+{% for option in nomad_client_options %}
+    {{ option }} = "{{ nomad_client_options[option] }}"
+{% endfor %}
+  }
+{% endif %}
+}
+
+server {
+  enabled = {{ nomad_server | default(false) | to_json }}
+{% if nomad_server_bootstrap_expect and nomad_server %}
+  bootstrap_expect = {{ nomad_server_bootstrap_expect }}
+{% endif %}
+{% if nomad_server_data_dir and nomad_server %}
+  data_dir = "{{ nomad_server_data_dir }}"
+{% endif %}
+{% if nomad_server_protocol_version and nomad_server %}
+  protocol_version = {{ nomad_server_protocol_version }}
+{% endif %}
+{% if nomad_server_num_schedulers and nomad_server %}
+  num_schedulers = {{ nomad_server_num_schedulers }}
+{% endif %}
+{% if nomad_server_enabled_schedulers and nomad_server %}
+  enabled_schedulers = [
+{% for scheduler in nomad_server_enabled_schedulers %}
+{% if not loop.last %}
+    "{{ scheduler }}",
+{% else %}
+    "{{ scheduler }}"
+{% endif %}
+{% endfor %}
+  ]
+{% endif %}
+{% if nomad_server_node_gc_threshold and nomad_server %}
+  node_gc_threshold = "{{ nomad_server_node_gc_threshold }}"
+{% endif %}
+{% if nomad_server_rejoin_after_leave and nomad_server %}
+  rejoin_after_leave = "{{ nomad_server_rejoin_after_leave }}"
+{% endif %}
+{% if nomad_server_retry_join and nomad_server %}
+  retry_join = [
+{% for node_address in nomad_server_retry_join %}
+{% if not loop.last %}
+    "{{ node_address }}",
+{% else %}
+    "{{ node_address }}"
+{% endif %}
+{% endfor %}
+  ]
+{% endif %}
+{% if nomad_server_retry_interval and nomad_server %}
+  retry_interval = "{{ nomad_server_retry_interval }}"
+{% endif %}
+{% if nomad_server_retry_max and nomad_server %}
+  retry_max = "{{ nomad_server_retry_max }}"
+{% endif %}
+{% if nomad_server_start_join and nomad_server %}
+  start_join = [
+{% for node_address in nomad_server_start_join %}
+{% if not loop.last %}
+    "{{ node_address }}",
+{% else %}
+    "{{ node_address }}"
+{% endif %}
+{% endfor %}
+  ]
+{% endif %}
+{% if nomad_server and ( nomad_encrypt | default(false) ) and nomad_encrypt_key is defined %}
+  encrypt = "{{ nomad_encrypt_key }}"
+{% endif %}
+}
